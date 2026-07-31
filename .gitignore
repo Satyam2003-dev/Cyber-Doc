@@ -43,3 +43,5 @@ next-env.d.ts
 /.npm-cache/
 /.dev-output.log
 /.dev-error.log
+/.qa-*.log
+/.start-*.log

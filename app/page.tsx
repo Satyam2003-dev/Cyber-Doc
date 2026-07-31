@@ -1,294 +1,202 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useThemePreferences } from "./useThemePreferences";
 
-type Note = {
-  id: number;
-  title: string;
-  excerpt: string;
-  body: string;
-  tag: string;
-  time: string;
-  favorite?: boolean;
-  mood: "fern" | "gold" | "mist" | "berry";
+type Folder = { id: string; name: string; parentId: string | null };
+type DocPage = { id: string; folderId: string; title: string; description: string; body: string; updated: string };
+type Workspace = { folders: Folder[]; pages: DocPage[] };
+
+const starter: Workspace = {
+  folders: [
+    { id: "start", name: "Getting started", parentId: null },
+    { id: "core", name: "Core concepts", parentId: null },
+    { id: "guides", name: "Guides", parentId: null },
+    { id: "authoring", name: "Authoring", parentId: "guides" },
+    { id: "publishing", name: "Publishing", parentId: "guides" },
+    { id: "reference", name: "Reference", parentId: null },
+  ],
+  pages: [
+    { id: "welcome", folderId: "start", title: "Welcome to Cyber-Doc", description: "Build a calm, connected documentation library that grows with your work.", updated: "Today", body: "# Welcome to Cyber-Doc\n\nCyber-Doc is a documentation workspace for guides, product knowledge, research, and technical references. Pages live inside folders, folders can live inside other folders, and the entire library stays available on this device.\n\n## Start with the structure\n\nUse the explorer to move through your documentation. Open **Edit mode** when you need to create folders, add pages, or revise content. Outside edit mode, the library is deliberately read-only.\n\n## Write useful pages\n\n- Give each page one clear purpose.\n- Put related pages in the same folder.\n- Use headings to create an automatic page outline.\n- Keep important links near the idea they support.\n\n> A quiet structure makes a large library feel small.\n\n## Your next step\n\nOpen Edit mode and create a page inside any folder. Your changes save locally as you work." },
+    { id: "quick", folderId: "start", title: "Quick start", description: "Create your first folder and documentation page.", updated: "Yesterday", body: "# Quick start\n\n## Enter edit mode\n\nSelect **Edit mode** in the top bar. Authoring controls appear only while editing.\n\n## Add a folder\n\nChoose a folder in the explorer, then use the add-folder control to create a nested section.\n\n## Add a page\n\nUse the page control beside a folder. The new page opens immediately, ready to name and write." },
+    { id: "structure", folderId: "core", title: "Folders and pages", description: "How nested information architecture works.", updated: "Jul 30", body: "# Folders and pages\n\nFolders organize the library. Every page belongs to one folder, and folders may contain any number of pages or nested folders.\n\n## A durable hierarchy\n\nPrefer a shallow structure at first. Add depth when a topic has a genuine internal structure, not simply because more levels are possible.\n\n## Naming guidance\n\nUse short nouns for folders and task-oriented titles for instructional pages." },
+    { id: "markdown", folderId: "authoring", title: "Markdown authoring", description: "Use headings, lists, quotes, links, and code blocks.", updated: "Jul 29", body: "# Markdown authoring\n\nCyber-Doc uses familiar Markdown for portable documentation.\n\n## Supported patterns\n\n- Headings\n- Paragraphs and lists\n- Block quotes\n- Inline emphasis\n- Fenced code blocks\n\n```js\nconst knowledge = { connected: true };\n```" },
+    { id: "style", folderId: "authoring", title: "Documentation style", description: "Write concise, scannable, task-focused pages.", updated: "Jul 27", body: "# Documentation style\n\n## Lead with the outcome\n\nTell readers what they can accomplish before describing the mechanism.\n\n## Make pages scannable\n\nUse descriptive headings, short paragraphs, and lists where sequence or comparison matters." },
+    { id: "publish", folderId: "publishing", title: "Publishing workflow", description: "Review and publish a documentation collection.", updated: "Jul 24", body: "# Publishing workflow\n\n## Review\n\nRead the page outside edit mode to experience it exactly as your audience will.\n\n## Publish\n\nA future hosted workspace can synchronize this local library while preserving the same folder and page model." },
+    { id: "shortcuts", folderId: "reference", title: "Keyboard shortcuts", description: "Move and edit without leaving the keyboard.", updated: "Jul 23", body: "# Keyboard shortcuts\n\n- **Ctrl / Cmd + K** — Search documentation\n- **Ctrl / Cmd + E** — Toggle edit mode\n- **Ctrl / Cmd + S** — Save the current page\n- **Escape** — Close the mobile explorer" },
+  ],
 };
 
-type WorkspaceView = "notes" | "graph" | "gallery" | "starred";
+const storageKey = "cyber-doc-documentation-v3";
 
-const seedNotes: Note[] = [
-  {
-    id: 1,
-    title: "The Architecture of Attention",
-    excerpt: "A quiet system for protecting deep work.",
-    body: "Attention is less like a spotlight and more like a garden. It flourishes when we create the conditions for it — shelter from interruption, room to wander, and enough silence for new thoughts to take root.\n\nThe best systems do not demand our focus. They protect it. They hold the small obligations at the edge of the clearing so the mind can stay with the difficult, beautiful thing in front of it.\n\nA useful ritual\n\nBegin by choosing one living question. Close the gates for forty minutes. Keep a small path open for stray thoughts, but do not follow them yet. When the bell sounds, walk the garden and gather what appeared.",
-    tag: "Thinking",
-    time: "Edited 8 min ago",
-    favorite: true,
-    mood: "fern",
-  },
-  {
-    id: 2,
-    title: "Rivers Remember Their Path",
-    excerpt: "Notes on resilient product systems.",
-    body: "Resilient systems find their way around obstacles without losing their destination. Like water, they prefer clear channels, small boundaries, and steady movement.\n\nDesign for graceful recovery before perfect operation. A product earns trust when it remembers the user's place and makes every return feel natural.",
-    tag: "Design",
-    time: "Yesterday",
-    mood: "mist",
-  },
-  {
-    id: 3,
-    title: "Field Notes: Alpine Moss",
-    excerpt: "Small observations from a patient ecosystem.",
-    body: "Moss does not hurry. It changes stone through persistence, holding water and creating a home for what comes next.\n\nThere is a product lesson here: the smallest dependable layer can become the foundation of an entire ecosystem.",
-    tag: "Field note",
-    time: "Jul 28",
-    mood: "gold",
-  },
-  {
-    id: 4,
-    title: "Gentle Interfaces",
-    excerpt: "When technology learns to whisper.",
-    body: "A gentle interface knows when to disappear. It offers a hand at the threshold, then gives the work the whole room.\n\nClarity is not emptiness. It is the careful placement of only what matters now.",
-    tag: "Craft",
-    time: "Jul 24",
-    mood: "berry",
-  },
-];
-
-function openNotesDb() {
-  return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open("cyber-doc", 1);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("notes")) db.createObjectStore("notes", { keyPath: "id" });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-export default function Home() {
-  const [notes, setNotes] = useState(seedNotes);
-  const [activeId, setActiveId] = useState(1);
-  const [query, setQuery] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(seedNotes[0].body);
-  const [ambientOpen, setAmbientOpen] = useState(false);
-  const [weather, setWeather] = useState<"clear" | "rain">("clear");
-  const [quiet, setQuiet] = useState(false);
+export default function DocumentationWorkspace() {
+  const { preferences, timeLabel } = useThemePreferences();
+  const [workspace, setWorkspace] = useState(starter);
+  const [selectedId, setSelectedId] = useState("welcome");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(starter.folders.map(folder => folder.id)));
+  const [editMode, setEditMode] = useState(false);
+  const [search, setSearch] = useState("");
+  const [mobileTree, setMobileTree] = useState(false);
+  const [renamingFolder, setRenamingFolder] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const [planting, setPlanting] = useState(false);
-  const [mobileNav, setMobileNav] = useState(false);
-  const [view, setView] = useState<WorkspaceView>("notes");
-  const [searching, setSearching] = useState(false);
-  const [period, setPeriod] = useState("Golden morning");
-  const hydrated = useRef(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  const active = notes.find((note) => note.id === activeId) ?? notes[0];
-  const filtered = useMemo(
-    () => notes.filter((note) => `${note.title} ${note.excerpt} ${note.tag}`.toLowerCase().includes(query.toLowerCase())),
-    [notes, query],
-  );
+  const selected = workspace.pages.find(page => page.id === selectedId) ?? workspace.pages[0];
+  const [draft, setDraft] = useState(selected);
 
   useEffect(() => {
-    openNotesDb().then((db) => {
-      const request = db.transaction("notes", "readonly").objectStore("notes").getAll();
-      request.onsuccess = () => {
-        if (request.result.length) setNotes(request.result as Note[]);
-        hydrated.current = true;
-      };
-    }).catch(() => { hydrated.current = true; });
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    const hour = new Date().getHours();
-    setPeriod(hour < 6 ? "Moonlit stillness" : hour < 10 ? "Golden morning" : hour < 15 ? "Sunlit noon" : hour < 18 ? "Warm afternoon" : hour < 21 ? "Forest evening" : "Moonlit night");
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Workspace;
+        if (parsed.folders?.length && parsed.pages?.length) setWorkspace(parsed);
+      }
+    } catch { /* retain starter library */ }
   }, []);
 
+  useEffect(() => setDraft(selected), [selected]);
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(workspace)); }, [workspace]);
   useEffect(() => {
-    setDraft(active?.body ?? "");
-    setEditing(false);
-  }, [activeId]);
+    const handler = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) { if (event.key === "Escape") setMobileTree(false); return; }
+      const key = event.key.toLowerCase();
+      if (key === "k") { event.preventDefault(); searchRef.current?.focus(); }
+      if (key === "e") { event.preventDefault(); setEditMode(value => !value); }
+      if (key === "s" && editMode) { event.preventDefault(); savePage(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
-  const persist = async (next: Note[]) => {
-    setNotes(next);
-    const db = await openNotesDb();
-    const tx = db.transaction("notes", "readwrite");
-    next.forEach((note) => tx.objectStore("notes").put(note));
-  };
+  const path = useMemo(() => folderPath(selected.folderId, workspace.folders), [selected, workspace.folders]);
+  const headings = useMemo(() => draft.body.split("\n").filter(line => line.startsWith("## ")).map(line => line.slice(3)), [draft.body]);
+  const filtered = useMemo(() => workspace.pages.filter(page => `${page.title} ${page.description} ${page.body}`.toLowerCase().includes(search.toLowerCase())), [workspace.pages, search]);
 
-  const flash = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2600);
-  };
+  function flash(message: string) { setToast(message); window.setTimeout(() => setToast(""), 2200); }
+  function toggleFolder(id: string) { setExpanded(current => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; }); }
+  function openPage(id: string) { setSelectedId(id); setMobileTree(false); }
+  function savePage() {
+    setWorkspace(current => ({ ...current, pages: current.pages.map(page => page.id === draft.id ? { ...draft, updated: "Saved just now" } : page) }));
+    flash("Page saved to this device");
+  }
+  function addFolder(parentId: string | null) {
+    const folder: Folder = { id: `folder-${Date.now()}`, name: "Untitled folder", parentId };
+    setWorkspace(current => ({ ...current, folders: [...current.folders, folder] }));
+    if (parentId) setExpanded(current => new Set(current).add(parentId));
+    setRenamingFolder(folder.id);
+    flash("Folder added");
+  }
+  function addPage(folderId: string) {
+    const page: DocPage = { id: `page-${Date.now()}`, folderId, title: "Untitled page", description: "Add a short description for this page.", body: "# Untitled page\n\nStart writing your documentation here.", updated: "New" };
+    setWorkspace(current => ({ ...current, pages: [...current.pages, page] }));
+    setExpanded(current => new Set(current).add(folderId));
+    setSelectedId(page.id); setDraft(page); flash("Page added");
+  }
+  function renameFolder(id: string, name: string) {
+    const clean = name.trim() || "Untitled folder";
+    setWorkspace(current => ({ ...current, folders: current.folders.map(folder => folder.id === id ? { ...folder, name: clean } : folder) }));
+    setRenamingFolder(null);
+  }
+  function descendantIds(id: string): string[] {
+    const children = workspace.folders.filter(folder => folder.parentId === id);
+    return [id, ...children.flatMap(folder => descendantIds(folder.id))];
+  }
+  function deleteFolder(id: string) {
+    const doomed = new Set(descendantIds(id));
+    const remainingPages = workspace.pages.filter(page => !doomed.has(page.folderId));
+    setWorkspace(current => ({ folders: current.folders.filter(folder => !doomed.has(folder.id)), pages: remainingPages }));
+    if (doomed.has(selected.folderId) && remainingPages[0]) setSelectedId(remainingPages[0].id);
+    flash("Folder and its contents removed");
+  }
+  function deletePage() {
+    const remaining = workspace.pages.filter(page => page.id !== selected.id);
+    setWorkspace(current => ({ ...current, pages: remaining }));
+    if (remaining[0]) setSelectedId(remaining[0].id);
+    flash("Page removed");
+  }
+  function insert(markup: string) {
+    setDraft(current => ({ ...current, body: `${current.body.trimEnd()}\n\n${markup}` }));
+  }
 
-  const runSearch = (value: string) => {
-    setQuery(value);
-    if (!value) return setSearching(false);
-    setSearching(true);
-    window.setTimeout(() => setSearching(false), 900);
-  };
+  return <main className="docs-app">
+    <header className="app-bar">
+      <button className="icon-button mobile-only" onClick={() => setMobileTree(true)} aria-label="Open documentation explorer">☰</button>
+      <a className="brand" href="/" aria-label="Cyber-Doc home"><span className="brand-symbol">C</span><span><b>Cyber-Doc</b><small>Documentation</small></span></a>
+      <label className="global-search"><span>⌕</span><input ref={searchRef} value={search} onChange={event => setSearch(event.target.value)} placeholder="Search documentation" aria-label="Search documentation"/><kbd>Ctrl K</kbd></label>
+      <span className="time-status" title="Theme follows browser time">{timeLabel}</span>
+      <a className="icon-button" href="/settings" aria-label="Open settings">⚙</a>
+      <button className={`edit-toggle ${editMode ? "active" : ""}`} onClick={() => setEditMode(value => !value)} aria-pressed={editMode}>{editMode ? "✓ Finish editing" : "✎ Edit mode"}</button>
+    </header>
 
-  const chooseView = (nextView: WorkspaceView) => {
-    setView(nextView);
-    setMobileNav(false);
-  };
+    <aside className={`doc-tree ${mobileTree ? "open" : ""}`}>
+      <div className="tree-heading"><span>Documentation</span><button className="icon-button mobile-only" onClick={() => setMobileTree(false)} aria-label="Close documentation explorer">×</button></div>
+      {editMode && <div className="tree-create"><button onClick={() => addFolder(null)}>＋ Folder</button><button onClick={() => addPage(path.at(-1)?.id ?? workspace.folders[0].id)}>＋ Page</button></div>}
+      {search ? <div className="search-results"><small>{filtered.length} results</small>{filtered.map(page => <button key={page.id} className={page.id === selected.id ? "active" : ""} onClick={() => openPage(page.id)}><span>▤</span><span><b>{page.title}</b><small>{page.description}</small></span></button>)}</div> : <nav aria-label="Documentation tree">{workspace.folders.filter(folder => folder.parentId === null).map(folder => <FolderNode key={folder.id} folder={folder} depth={0} />)}</nav>}
+      <div className="tree-footer"><span>Stored locally</span><a href="/settings">Preferences</a></div>
+    </aside>
 
-  const save = () => {
-    const next = notes.map((note) => note.id === activeId ? { ...note, body: draft, time: "Saved just now" } : note);
-    void persist(next);
-    setEditing(false);
-    flash("Your tree drank deeply. Everything is saved.");
-  };
+    <section className="doc-content">
+      <div className="breadcrumbs"><button onClick={() => setMobileTree(true)}>Docs</button>{path.map(folder => <span key={folder.id}>› {folder.name}</span>)}</div>
+      {editMode ? <article className="editor-surface">
+        <div className="edit-banner"><span><b>Edit mode</b><small>Structure and content controls are unlocked.</small></span><div><button className="danger-text" onClick={deletePage}>Delete page</button><button className="filled-button" onClick={savePage}>Save page</button></div></div>
+        <label className="field"><span>Page title</span><input value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })}/></label>
+        <label className="field"><span>Description</span><input value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })}/></label>
+        <label className="field compact"><span>Folder</span><select value={draft.folderId} onChange={event => setDraft({ ...draft, folderId: event.target.value })}>{workspace.folders.map(folder => <option key={folder.id} value={folder.id}>{folderPath(folder.id, workspace.folders).map(item => item.name).join(" / ")}</option>)}</select></label>
+        <div className="block-tools" aria-label="Insert content"><button onClick={() => insert("## New section")}>H2</button><button onClick={() => insert("- List item")}>List</button><button onClick={() => insert("> Important note")}>Quote</button><button onClick={() => insert("```js\n// Add code\n```")}>Code</button><button onClick={() => insert("[Link title](https://example.com)")}>Link</button></div>
+        <label className="field"><span>Markdown content</span><textarea value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} aria-label="Markdown content"/></label>
+      </article> : <article className="documentation-page">
+        <p className="section-label">{path.at(-1)?.name}</p>
+        <h1>{selected.title}</h1>
+        <p className="lead">{selected.description}</p>
+        <div className="page-rule" />
+        <MarkdownDocument content={selected.body} />
+        <footer className="page-footer"><span>Last updated {selected.updated}</span><button onClick={() => setEditMode(true)}>Edit this page</button></footer>
+      </article>}
+    </section>
 
-  const createNote = () => {
-    setPlanting(true);
-    window.setTimeout(() => {
-      const id = Date.now();
-      const next: Note = { id, title: "Untitled seed", excerpt: "A new thought is beginning to grow.", body: "Begin here…", tag: "New growth", time: "Just planted", mood: "fern" };
-      void persist([next, ...notes]);
-      setActiveId(id);
-      setDraft(next.body);
-      setEditing(true);
-      setPlanting(false);
-      setMobileNav(false);
-    }, 1200);
-  };
+    {!editMode && <aside className="page-outline"><b>In this article</b>{headings.length ? headings.map(heading => <a key={heading} href={`#${slugify(heading)}`}>{heading}</a>) : <span>No sections</span>}<div className="outline-note">Reading mode<br/><small>{preferences.theme === "auto" ? "Automatic theme" : `${preferences.theme} theme`}</small></div></aside>}
+    {toast && <div className="snackbar" role="status">{toast}</div>}
+  </main>;
 
-  const toggleFavorite = () => {
-    const next = notes.map((note) => note.id === activeId ? { ...note, favorite: !note.favorite } : note);
-    void persist(next);
-    flash(active.favorite ? "Blossom tucked away." : "A new blossom appeared.");
-  };
-
-  return (
-    <main className={`world ${weather} ${quiet ? "quiet" : ""}`}>
-      <div className="sky-glow" />
-      <div className="mountains"><i /><i /><i /></div>
-      <div className="cloud cloud-a" /><div className="cloud cloud-b" />
-      <div className="forest-back"><span>♠</span><span>♠</span><span>♠</span><span>♠</span><span>♠</span></div>
-      <div className="river"><i /><i /><i /></div>
-      {weather === "rain" && <div className="rain-layer" aria-hidden="true" />}
-      {!quiet && <><span className="bird bird-one">⌁</span><span className="bird bird-two">⌁</span><span className="butterfly">❧</span></>}
-
-      <header className="topbar">
-        <button className="mobile-menu" onClick={() => setMobileNav(!mobileNav)} aria-label="Open forest navigation">☰</button>
-        <div className="brand-mark"><span className="seed-mark">●</span><span className="sprout">⌁</span></div>
-        <div className="brand"><strong>Cyber-Doc</strong><small>living knowledge forest</small></div>
-        <div className="season"><span className="sun-dot" /> {period} <i /> Local forest</div>
-        <div className="top-actions">
-          <button className="round-btn search-mobile" onClick={() => setMobileNav(true)} aria-label="Search">⌕</button>
-          <button className={`round-btn ${ambientOpen ? "active" : ""}`} onClick={() => setAmbientOpen(!ambientOpen)} aria-label="Ambient settings">♫</button>
-          <button className="avatar" aria-label="Profile">N</button>
-        </div>
-      </header>
-
-      <aside className={`forest-panel ${mobileNav ? "open" : ""}`}>
-        <div className="panel-heading"><span>Your forest</span><button onClick={() => setMobileNav(false)} className="close-mobile">×</button></div>
-        <button className="plant-button" onClick={createNote}><span>＋</span> Plant a new thought</button>
-        <label className={`search-box ${searching ? "seeking" : ""}`}><span>{searching ? "↝" : "⌕"}</span><input value={query} onChange={(e) => runSearch(e.target.value)} placeholder="Search among the trees…" /></label>
-        <nav className="forest-nav" aria-label="Workspace">
-          <button className={view === "notes" ? "active" : ""} onClick={() => chooseView("notes")}><span>♣</span> Notes <small>{notes.length}</small></button>
-          <button className={view === "graph" ? "active" : ""} onClick={() => chooseView("graph")}><span>⌘</span> Root graph <small>12</small></button>
-          <button className={view === "gallery" ? "active" : ""} onClick={() => chooseView("gallery")}><span>▧</span> Media garden <small>8</small></button>
-          <button className={view === "starred" ? "active" : ""} onClick={() => chooseView("starred")}><span>✿</span> Blossoms <small>{notes.filter(n => n.favorite).length}</small></button>
-        </nav>
-        <div className="forest-stats"><span><b>{notes.length}</b> trees</span><span><b>12</b> roots</span><span><b>{notes.filter(n => n.favorite).length}</b> blossoms</span></div>
-        <div className="note-list">
-          {(view === "starred" ? filtered.filter(note => note.favorite) : filtered).map((note) => (
-            <button key={note.id} className={`note-leaf ${note.mood} ${note.id === activeId ? "selected" : ""}`} onClick={() => { setActiveId(note.id); setView("notes"); setMobileNav(false); }}>
-              <span className="tree-icon">♣</span>
-              <span className="note-copy"><strong>{note.title}</strong><small>{note.excerpt}</small><em>{note.tag} · {note.time}</em></span>
-              {note.favorite && <span className="flower">✿</span>}
-            </button>
-          ))}
-          {!filtered.length && <p className="empty-state">No tree carries those words yet.</p>}
-        </div>
-        <div className="forest-footer"><span className="sync-dot" /> Available offline <button aria-label="Forest options">•••</button></div>
-      </aside>
-
-      <section className="workspace">
-        <div className="reading-shell">
-          {view === "notes" && <><div className="document-meta">
-            <span className="crumb">Forest / {active.tag}</span>
-            <div><button onClick={toggleFavorite} className={active.favorite ? "fav active" : "fav"} aria-label="Favorite">✿</button><button className="more" aria-label="More options">•••</button></div>
-          </div>
-          <article className="paper">
-            <div className="paper-vine">❦</div>
-            <div className="title-row">
-              <div><span className="eyebrow">{active.tag}</span><h1>{active.title}</h1><p className="byline">Last tended {active.time.toLowerCase()} · 4 min read</p></div>
-              <button className={editing ? "mode-button editing" : "mode-button"} onClick={() => editing ? save() : setEditing(true)}>{editing ? "Save changes" : "✎  Tend this page"}</button>
-            </div>
-            {editing ? (
-              <div className="editor-wrap">
-                <div className="format-bar"><button><b>B</b></button><button><i>I</i></button><button>H₂</button><button>❝</button><button>☷</button><span /> <small>Writing mode · saved on this device</small></div>
-                <textarea autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Document content" />
-                <div className="edit-actions"><button onClick={() => { setEditing(false); setDraft(active.body); }}>Cancel</button><button onClick={save}>Nourish & save</button></div>
-              </div>
-            ) : (
-              <div className="prose">
-                {active.body.split("\n\n").map((paragraph, index) => index === 2 ? <div className="ritual" key={index}><span>✦</span><div><h3>{paragraph}</h3><p>{active.body.split("\n\n")[3]}</p></div></div> : (index !== 3 && <p key={index}>{paragraph}</p>))}
-                <blockquote>“What we choose to protect is what we allow to grow.”<cite>— A note from the forest</cite></blockquote>
-                <div className="root-links"><span>Root connections</span><button>↗ Deep Work Rituals</button><button>↗ Designing for Calm</button></div>
-              </div>
-            )}
-            <footer className="document-footer"><span>☘</span><p>This tree has grown through <b>7 revisions</b><small>Its roots connect to 3 other thoughts</small></p><button>View growth rings →</button></footer>
-          </article></>}
-          {view === "graph" && <GraphView notes={notes} onOpen={(id) => { setActiveId(id); setView("notes"); }} />}
-          {view === "gallery" && <GalleryView onOpen={() => { setView("notes"); flash("Media block opened in its parent tree."); }} />}
-          {view === "starred" && <CollectionView notes={notes.filter(note => note.favorite)} onOpen={(id) => { setActiveId(id); setView("notes"); }} />}
-        </div>
-      </section>
-
-      <aside className="activity-rail">
-        <div className="rail-title"><span>Living activity</span><small>Today</small></div>
-        <div className="focus-pebble"><span className="focus-ring"><b>42</b><small>min</small></span><div><strong>Deep focus</strong><small>One quiet session</small></div></div>
-        <div className="growth-card"><span className="mini-tree">♣</span><div><strong>Your forest is thriving</strong><small>3 thoughts tended this week</small><i><b style={{ width: "68%" }} /></i></div></div>
-        <div className="activity-list">
-          <h3>Recently bloomed</h3>
-          <button onClick={() => { setActiveId(2); setView("notes"); }}><span className="activity-icon river-icon">≈</span><p><b>Rivers Remember Their Path</b><small>Edited yesterday</small></p></button>
-          <button onClick={() => { setActiveId(4); setView("notes"); }}><span className="activity-icon flower-icon">✿</span><p><b>Gentle Interfaces</b><small>New root connection</small></p></button>
-          <button onClick={() => setView("graph")}><span className="activity-icon root-icon">⌘</span><p><b>12 root connections</b><small>View living graph</small></p></button>
-        </div>
-        <div className="daily-seed"><span>Daily seed</span><p>“Small ideas, tended often, become a canopy.”</p><button onClick={createNote}>Plant this thought</button></div>
-        <div className="rail-tags"><span>Vines</span><div><button>#design</button><button>#research</button><button>#calm</button><button>#systems</button></div></div>
-      </aside>
-
-      {ambientOpen && <aside className="ambient-card">
-        <div className="ambient-title"><span><b>Living ambience</b><small>Golden morning · riverside</small></span><button onClick={() => setAmbientOpen(false)}>×</button></div>
-        <div className="soundscape"><span className="sound-orb">≈</span><div><b>Forest river</b><small>Water, soft breeze & waking birds</small></div><button className="pause">Ⅱ</button></div>
-        {[['River', 72], ['Birdsong', 44], ['Leaves', 32]].map(([name, value]) => <label className="volume" key={String(name)}><span>{name}</span><input type="range" defaultValue={Number(value)} /><small>{value}%</small></label>)}
-        <div className="ambient-buttons"><button onClick={() => setWeather(weather === "clear" ? "rain" : "clear")}>{weather === "rain" ? "☀ Clear sky" : "☂ Rain mode"}</button><button onClick={() => setQuiet(!quiet)}>{quiet ? "❧ Wake forest" : "◌ Focus calm"}</button></div>
-      </aside>}
-
-      {planting && <div className="planting"><div className="plant-animation"><span className="falling-seed">●</span><i className="ground" /><b className="new-sprout">♣</b></div><p>Planting a new thought…</p></div>}
-      {toast && <div className="toast"><span>✿</span>{toast}</div>}
-    </main>
-  );
+  function FolderNode({ folder, depth }: { folder: Folder; depth: number }) {
+    const children = workspace.folders.filter(child => child.parentId === folder.id);
+    const pages = workspace.pages.filter(page => page.folderId === folder.id);
+    const isOpen = expanded.has(folder.id);
+    return <div className="folder-group">
+      <div className="folder-row" style={{ paddingLeft: `${10 + depth * 14}px` }}>
+        <button className="folder-main" onClick={() => toggleFolder(folder.id)} aria-expanded={isOpen}><span className="chevron">{isOpen ? "▾" : "›"}</span><span className="folder-icon">{isOpen ? "▿" : "▹"}</span>{renamingFolder === folder.id ? <input autoFocus defaultValue={folder.name} onClick={event => event.stopPropagation()} onBlur={event => renameFolder(folder.id, event.target.value)} onKeyDown={event => { if (event.key === "Enter") renameFolder(folder.id, event.currentTarget.value); }}/>: <b>{folder.name}</b>}</button>
+        {editMode && <span className="folder-actions"><button onClick={() => addPage(folder.id)} aria-label={`Add page to ${folder.name}`}>＋</button><button onClick={() => addFolder(folder.id)} aria-label={`Add folder to ${folder.name}`}>▱</button><button onClick={() => setRenamingFolder(folder.id)} aria-label={`Rename ${folder.name}`}>✎</button><button onClick={() => deleteFolder(folder.id)} aria-label={`Delete ${folder.name}`}>×</button></span>}
+      </div>
+      {isOpen && <div>{pages.map(page => <button key={page.id} className={`page-row ${selected.id === page.id ? "active" : ""}`} style={{ paddingLeft: `${38 + depth * 14}px` }} onClick={() => openPage(page.id)}><span>▤</span>{page.title}</button>)}{children.map(child => <FolderNode key={child.id} folder={child} depth={depth + 1}/>)}</div>}
+    </div>;
+  }
 }
 
-function GraphView({ notes, onOpen }: { notes: Note[]; onOpen: (id: number) => void }) {
-  return <section className="feature-surface graph-view">
-    <div className="feature-heading"><div><span className="eyebrow">Underground network</span><h2>Your living root graph</h2><p>Ideas grow stronger when their roots meet.</p></div><div className="graph-legend"><span>● Thought</span><span>✿ Blossom</span><span>⌁ Root</span></div></div>
-    <div className="root-canvas" role="img" aria-label="Connected knowledge graph">
-      <i className="root-line r1" /><i className="root-line r2" /><i className="root-line r3" /><i className="root-line r4" /><i className="root-line r5" />
-      {notes.map((note, index) => <button key={note.id} className={`graph-tree node-${index + 1}`} onClick={() => onOpen(note.id)}><span>♣</span><b>{note.title}</b><small>{note.tag}</small>{note.favorite && <em>✿</em>}</button>)}
-      <div className="graph-mushroom">♠<small>Unlinked seed</small></div>
-    </div>
-    <div className="graph-insight"><span>✦</span><p><b>A new path is emerging</b><small>“Attention” and “Gentle Interfaces” share 4 ideas but are not yet linked.</small></p><button>Grow a root</button></div>
-  </section>;
+function folderPath(id: string, folders: Folder[]) {
+  const path: Folder[] = [];
+  let current = folders.find(folder => folder.id === id);
+  while (current) { path.unshift(current); current = current.parentId ? folders.find(folder => folder.id === current?.parentId) : undefined; }
+  return path;
 }
 
-function GalleryView({ onOpen }: { onOpen: () => void }) {
-  const items = [
-    ["Alpine moss study", "Field image", "moss-media"], ["System river map", "Diagram", "river-media"],
-    ["Quiet architecture", "Sketch", "arch-media"], ["Morning field recording", "Audio · 12:04", "audio-media"],
-    ["Forest interface flow", "Mermaid", "flow-media"], ["Attention ritual", "PDF · 8 pages", "paper-media"],
-  ];
-  return <section className="feature-surface gallery-view">
-    <div className="feature-heading"><div><span className="eyebrow">Media garden</span><h2>Artifacts among the trees</h2><p>Images, sketches, sounds, diagrams and documents — available offline.</p></div><button className="organic-action">＋ Add artifact</button></div>
-    <div className="media-grid">{items.map(([title, kind, style], index) => <button className={`media-card ${style}`} key={title} onClick={onOpen}><span className="media-visual">{index === 3 ? "♪" : index === 4 ? "⌘" : index === 5 ? "≡" : "❦"}</span><strong>{title}</strong><small>{kind}</small></button>)}</div>
-  </section>;
+function slugify(value: string) { return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+
+function MarkdownDocument({ content }: { content: string }) {
+  let code = false;
+  return <div className="rendered-markdown">{content.split("\n").map((line, index) => {
+    if (line.startsWith("```")) { code = !code; return <span key={index} />; }
+    if (code) return <pre key={index}><code>{line || " "}</code></pre>;
+    if (line.startsWith("# ")) return null;
+    if (line.startsWith("## ")) { const text = line.slice(3); return <h2 id={slugify(text)} key={index}>{text}</h2>; }
+    if (line.startsWith("### ")) return <h3 key={index}>{line.slice(4)}</h3>;
+    if (line.startsWith("- ")) return <div className="list-line" key={index}><span>•</span><p>{formatInline(line.slice(2))}</p></div>;
+    if (line.startsWith("> ")) return <blockquote key={index}>{formatInline(line.slice(2))}</blockquote>;
+    if (!line.trim()) return <span className="spacer" key={index} />;
+    return <p key={index}>{formatInline(line)}</p>;
+  })}</div>;
 }
 
-function CollectionView({ notes, onOpen }: { notes: Note[]; onOpen: (id: number) => void }) {
-  return <section className="feature-surface collection-view"><div className="feature-heading"><div><span className="eyebrow">Blossoms</span><h2>Thoughts worth returning to</h2><p>Favorite notes gather here like flowers in a clearing.</p></div></div><div className="blossom-grid">{notes.map(note => <button key={note.id} onClick={() => onOpen(note.id)}><span>✿</span><small>{note.tag}</small><strong>{note.title}</strong><p>{note.excerpt}</p><em>Open tree →</em></button>)}</div></section>;
+function formatInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return <>{parts.map((part, index) => part.startsWith("**") ? <strong key={index}>{part.slice(2, -2)}</strong> : part)}</>;
 }

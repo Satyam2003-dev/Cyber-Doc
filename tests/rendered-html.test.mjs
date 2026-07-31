@@ -9,45 +9,48 @@ async function render(path = "/") {
   return worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
 }
 
-test("server-renders the documentation workspace", async () => {
+test("renders the forest dashboard and shared navigation", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<title>Cyber-Doc — Documentation Workspace<\/title>/);
-  assert.match(html, /Search documentation/);
-  assert.match(html, /Documentation tree/);
-  assert.match(html, /Getting started/);
-  assert.match(html, /Welcome to Cyber-Doc/);
-  assert.match(html, /Edit mode/);
-  assert.match(html, /href="\/settings"/);
+  assert.match(html, /Your knowledge forest/);
+  assert.match(html, /Recent documents/);
+  assert.match(html, /Collections/);
+  assert.match(html, /Morning river/);
+  assert.match(html, /href="\/library"/);
+  assert.match(html, /href="\/graph"/);
 });
 
-test("server-renders a separate settings page", async () => {
-  const response = await render("/settings");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /Your reading environment/);
-  assert.match(html, /Automatic/);
-  assert.match(html, /Follows browser time/);
-  assert.match(html, /Layout density/);
-  assert.match(html, /Local storage/);
+test("renders every requested product screen", async () => {
+  const routes = {
+    "/editor": "Rich text editor",
+    "/library": "Document library",
+    "/search": "Search everything",
+    "/media": "Media manager",
+    "/graph": "Knowledge graph",
+    "/history": "Version history",
+    "/backup": "Backup & sync",
+    "/profile": "Profile & statistics",
+    "/ambient": "Ambient sound dashboard",
+    "/settings": "Settings",
+  };
+  for (const [path, heading] of Object.entries(routes)) {
+    const response = await render(path);
+    assert.equal(response.status, 200, path);
+    assert.match(await response.text(), new RegExp(heading.replace(/[&]/g, "&amp;|&"), "i"), path);
+  }
 });
 
-test("ships nested editing, time themes, and offline persistence", async () => {
-  const [page, settings, theme, serviceWorker] = await Promise.all([
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/settings/page.tsx", import.meta.url), "utf8"),
+test("includes the advanced editor, data, nature, and timing capabilities", async () => {
+  const [app, theme, sw] = await Promise.all([
+    readFile(new URL("../app/CyberDocApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/useThemePreferences.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /FolderNode/);
-  assert.match(page, /addFolder/);
-  assert.match(page, /addPage/);
-  assert.match(page, /Markdown content/);
-  assert.match(page, /localStorage\.setItem/);
-  assert.match(settings, /theme-grid/);
-  assert.match(theme, /new Date/);
+  for (const feature of ["SlashMenu", "DrawingCanvas", "DiagramPreview", "LinkPreview", "AI assistant", "Version history", "Upload manager", "Cloud sync", "Export your forest", "Knowledge forest progress"]) assert.match(app, new RegExp(feature));
+  assert.match(app, /NatureMoment/);
+  assert.match(app, /new Blob/);
   assert.match(theme, /getHours/);
   assert.match(theme, /setInterval/);
-  assert.match(serviceWorker, /cyber-doc-shell-v3/);
+  assert.match(sw, /cyber-doc-shell-v3/);
 });

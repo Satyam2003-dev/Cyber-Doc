@@ -7,8 +7,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Cyber-Doc — Documentation Workspace";
-  const description = "A clean, local-first documentation workspace with nested folders, focused reading, and complete edit mode.";
+  const title = "Cyber-Doc — Living Knowledge Workspace";
+  const description = "A local-first knowledge workspace for writing, media, search, connected notes, backups, and calm ambient focus.";
   return {
     title,
     description,

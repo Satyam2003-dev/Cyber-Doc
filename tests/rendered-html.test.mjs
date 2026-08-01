@@ -36,7 +36,7 @@ test("implements shared local CRUD, editor shortcuts, themes, and local audio", 
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
   ]);
-  for (const operation of ["createStory", "updateStory", "deleteStory", "duplicateStory", "createPublication", "updatePublication", "deletePublication", "addMedia", "updateMedia", "deleteMedia", "addRevision", "deleteRevision", "clearAll"]) assert.match(store, new RegExp(operation));
+  for (const operation of ["createStory", "updateStory", "deleteStory", "duplicateStory", "createPublication", "updatePublication", "deletePublication", "addMedia", "updateMedia", "deleteMedia", "addRevision", "deleteRevision", "updateProfile", "clearAll"]) assert.match(store, new RegExp(operation));
   assert.match(store, /stories: \[\], publications: \[\], media: \[\], revisions: \[\]/);
   assert.match(store, /session memory remains available/);
   assert.match(store, /dataUrl: undefined/);
@@ -64,6 +64,11 @@ test("implements shared local CRUD, editor shortcuts, themes, and local audio", 
   assert.match(app, /cyber-search-query/);
   assert.match(app, /nav-search-submit/);
   assert.match(app, /Use current time/);
+  assert.match(app, /Choose image/);
+  assert.match(app, /Save profile/);
+  assert.match(app, /profileImage/);
+  assert.doesNotMatch(app, /setFollowing/);
+  assert.doesNotMatch(app, /\["For you", "Following"/);
   assert.match(app, /role="switch"/);
   assert.match(app, /aria-checked=\{preferences\.motion\}/);
   assert.doesNotMatch(app, /top-time/);

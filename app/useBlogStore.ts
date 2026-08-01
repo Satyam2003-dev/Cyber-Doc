@@ -24,9 +24,10 @@ export type Story = {
 export type Publication = { id: string; name: string; description: string; sections: string[]; createdAt: string };
 export type MediaItem = { id: string; name: string; type: string; size: number; dataUrl?: string; createdAt: string };
 export type Revision = { id: string; storyId: string; title: string; subtitle: string; body: string; createdAt: string };
-export type BlogData = { stories: Story[]; publications: Publication[]; media: MediaItem[]; revisions: Revision[] };
+export type AuthorIdentity = { name: string; bio: string; location: string; avatar?: string; cover?: string };
+export type BlogData = { stories: Story[]; publications: Publication[]; media: MediaItem[]; revisions: Revision[]; profile: AuthorIdentity };
 
-const emptyData: BlogData = { stories: [], publications: [], media: [], revisions: [] };
+const emptyData: BlogData = { stories: [], publications: [], media: [], revisions: [], profile: { name: "You", bio: "", location: "" } };
 const storageKey = "cyber-publish-data-v1";
 const changeEvent = "cyber-publish-data-change";
 const selectedStoryKey = "cyber-publish-selected-story";
@@ -81,8 +82,9 @@ export function useBlogStore() {
 
   const createStory = useCallback((values: Partial<Story> = {}) => {
     const now = new Date().toISOString();
+    const author = (hydrated ? memoryData : readStorage()).profile.name || "You";
     const story: Story = {
-      title: "", subtitle: "", body: "", author: "You", topic: "General", tags: [],
+      title: "", subtitle: "", body: "", author, topic: "General", tags: [],
       status: "Draft", views: 0, claps: 0, ...values,
       id: uid(), createdAt: now, updatedAt: now,
     };
@@ -107,9 +109,10 @@ export function useBlogStore() {
   const addMedia = useCallback((item: Omit<MediaItem, "id" | "createdAt">) => commit(current => ({ ...current, media: [{ ...item, id: uid(), createdAt: new Date().toISOString() }, ...current.media] })), []);
   const updateMedia = useCallback((id: string, patch: Partial<MediaItem>) => commit(current => ({ ...current, media: current.media.map(item => item.id === id ? { ...item, ...patch } : item) })), []);
   const deleteMedia = useCallback((id: string) => commit(current => ({ ...current, media: current.media.filter(item => item.id !== id) })), []);
+  const updateProfile = useCallback((patch: Partial<AuthorIdentity>) => commit(current => ({ ...current, profile: { ...emptyData.profile, ...current.profile, ...patch } })), []);
   const clearAll = useCallback(() => commit(() => emptyData), []);
   const selectStory = useCallback((id?: string) => id ? localStorage.setItem(selectedStoryKey, id) : localStorage.removeItem(selectedStoryKey), []);
   const selectedStoryId = useCallback(() => localStorage.getItem(selectedStoryKey), []);
 
-  return { data, ready, createStory, updateStory, deleteStory, duplicateStory, addRevision, deleteRevision, createPublication, updatePublication, deletePublication, addMedia, updateMedia, deleteMedia, clearAll, selectStory, selectedStoryId };
+  return { data, ready, createStory, updateStory, deleteStory, duplicateStory, addRevision, deleteRevision, createPublication, updatePublication, deletePublication, addMedia, updateMedia, deleteMedia, updateProfile, clearAll, selectStory, selectedStoryId };
 }

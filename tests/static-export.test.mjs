@@ -32,7 +32,9 @@ test("uses repository-safe links, metadata, manifest, and local audio", async ()
   assert.doesNotMatch(app, /window\.location\.assign\("\//);
   assert.match(sound, /sitePath\("\/audio\//);
   assert.match(manifest, /"start_url":"\/Cyber-Doc\/"/);
-  assert.match(workflow, /actions\/deploy-pages@v4/);
+  assert.match(workflow, /actions\/configure-pages@v6/);
+  assert.match(workflow, /actions\/upload-pages-artifact@v5/);
+  assert.match(workflow, /actions\/deploy-pages@v5/);
   assert.doesNotMatch(packageFile, /cloudflare|vinext|wrangler/i);
 });
 

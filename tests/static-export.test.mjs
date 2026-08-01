@@ -71,6 +71,11 @@ test("keeps CRUD, editor shortcuts, themes, and profile editing", async () => {
   ]);
   for (const operation of ["createStory", "updateStory", "deleteStory", "duplicateStory", "createPublication", "updatePublication", "deletePublication", "addMedia", "updateMedia", "deleteMedia", "addRevision", "deleteRevision", "updateProfile", "clearAll"]) assert.match(store, new RegExp(operation));
   for (const feature of ["Ctrl+B", "Publish story", "Schedule story", "Export JSON backup", "Import backup", "Erase all content", "Save profile"]) assert.match(app, new RegExp(feature.replace(/[+]/g, "\\+")));
+  assert.match(app, /setSelectionRange/);
+  assert.match(app, /MarkdownPreview body=\{body\}/);
+  assert.match(app, /markdownToHtml/);
+  assert.match(styles, /\.formatted-preview strong/);
+  assert.match(styles, /\.formatted-preview pre code/);
   for (const palette of ["spring", "summer", "autumn", "winter", "rainforest", "ocean", "desert", "blossom", "aurora"]) {
     assert.match(theme, new RegExp(palette));
     assert.match(styles, new RegExp(`data-theme=[\\\"]${palette}[\\\"]`));

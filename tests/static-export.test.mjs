@@ -33,7 +33,7 @@ test("every application button is connected to an action", async () => {
     ts.forEachChild(node, visit);
   };
   visit(source);
-  assert.equal(buttonCount, 69);
+  assert.equal(buttonCount, 70);
   assert.deepEqual(unwired, []);
 });
 
@@ -74,6 +74,11 @@ test("keeps CRUD, editor shortcuts, themes, and profile editing", async () => {
   assert.match(app, /setSelectionRange/);
   assert.match(app, /MarkdownPreview body=\{body\}/);
   assert.match(app, /markdownToHtml/);
+  assert.match(theme, /editing:false/);
+  assert.match(app, /Read mode is on/);
+  assert.match(app, /Edit mode enabled/);
+  assert.match(app, /aria-checked=\{preferences\.editing\}/);
+  assert.match(app, /if \(!preferences\.editing\) return/);
   assert.match(styles, /\.formatted-preview strong/);
   assert.match(styles, /\.formatted-preview pre code/);
   for (const palette of ["spring", "summer", "autumn", "winter", "rainforest", "ocean", "desert", "blossom", "aurora"]) {

@@ -5,8 +5,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 export type ThemeChoice="auto"|"light"|"dark"|"spring"|"summer"|"autumn"|"winter"|"rainforest"|"ocean"|"desert"|"blossom"|"aurora";
-export type Preferences={theme:ThemeChoice;font:"serif"|"system";motion:boolean};
-export const defaultPreferences:Preferences={theme:"auto",font:"system",motion:true};
+export type Preferences={theme:ThemeChoice;font:"serif"|"system";motion:boolean;editing:boolean};
+export const defaultPreferences:Preferences={theme:"auto",font:"system",motion:true,editing:false};
 const preferenceKey="cyber-blog-preferences-v1";const preferenceEvent="cyber-blog-preferences-change";
 const timedTheme=(hour:number):Exclude<ThemeChoice,"auto">=>hour<5||hour>=21?"dark":hour<9?"spring":hour<17?"light":hour<19?"autumn":"rainforest";
 

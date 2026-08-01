@@ -11,7 +11,30 @@ test("exports every application route for GitHub Pages", async () => {
     const html = await readFile(file, "utf8");
     assert.match(html, /Cyber-Doc/i, route || "home");
     assert.match(html, /\/Cyber-Doc\/_next\//, route || "home");
+    const rootLinks = [...html.matchAll(/href="(\/[^"#]*)"/g)].map(match => match[1]);
+    assert.equal(rootLinks.filter(link => !link.startsWith("/Cyber-Doc")).length, 0, `${route || "home"} contains a root-level link that will fail on Pages`);
   }
+});
+
+test("every application button is connected to an action", async () => {
+  const [{ default: ts }, app] = await Promise.all([
+    import("typescript"),
+    readFile(new URL("../app/CyberDocApp.tsx", import.meta.url), "utf8"),
+  ]);
+  const source = ts.createSourceFile("CyberDocApp.tsx", app, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const unwired = [];
+  let buttonCount = 0;
+  const visit = node => {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && node.tagName.getText(source) === "button") {
+      buttonCount += 1;
+      const attributes = node.attributes.properties.filter(ts.isJsxAttribute).map(attribute => attribute.name.getText(source));
+      if (!attributes.includes("onClick") && !attributes.includes("type")) unwired.push(source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(buttonCount, 69);
+  assert.deepEqual(unwired, []);
 });
 
 test("uses repository-safe links, metadata, manifest, and local audio", async () => {

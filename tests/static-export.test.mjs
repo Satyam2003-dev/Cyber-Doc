@@ -21,7 +21,7 @@ test("uses repository-safe links, metadata, manifest, and local audio", async ()
     readFile(new URL("../app/CyberDocApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/useAmbientSound.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
-    readFile(new URL("../.github/workflows/deploy-pages.yml", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/nextjs.yml", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
   assert.match(config, /output: "export"/);

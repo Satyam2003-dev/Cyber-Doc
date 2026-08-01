@@ -79,7 +79,7 @@ public/
 tests/
   static-export.test.mjs   Export and capability tests
 .github/workflows/
-  deploy-pages.yml          Automatic Pages deployment
+  nextjs.yml               Automatic Pages deployment
 ```
 
 ## Publish with GitHub Pages

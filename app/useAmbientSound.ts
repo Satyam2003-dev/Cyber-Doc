@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { sitePath } from "./sitePath";
 
 export const ambientTrackNames = ["Morning river","Forest breeze","Rain","Thunder","Waterfall","Stream","Birds","Crickets","Night forest"] as const;
 export type AmbientTrackName = typeof ambientTrackNames[number];
@@ -8,15 +9,15 @@ type Levels = Record<AmbientTrackName, number>;
 type AmbientState = { enabled: boolean; playing: boolean; automatic: boolean; levels: Levels; activeTrack: AmbientTrackName; periodLabel: string };
 
 const sources: Record<AmbientTrackName,string> = {
-  "Morning river":"/audio/calm-river-pixabay.mp3",
-  "Forest breeze":"/audio/forest-breeze-pixabay.mp3",
-  Rain:"/audio/rain-pixabay.mp3",
-  Thunder:"/audio/thunder-pixabay.mp3",
-  Waterfall:"/audio/waterfall-pixabay.mp3",
-  Stream:"/audio/stream-pixabay.mp3",
-  Birds:"/audio/birds-pixabay.mp3",
-  Crickets:"/audio/crickets-pixabay.mp3",
-  "Night forest":"/audio/night-forest-pixabay.mp3",
+  "Morning river":sitePath("/audio/calm-river-pixabay.mp3"),
+  "Forest breeze":sitePath("/audio/forest-breeze-pixabay.mp3"),
+  Rain:sitePath("/audio/rain-pixabay.mp3"),
+  Thunder:sitePath("/audio/thunder-pixabay.mp3"),
+  Waterfall:sitePath("/audio/waterfall-pixabay.mp3"),
+  Stream:sitePath("/audio/stream-pixabay.mp3"),
+  Birds:sitePath("/audio/birds-pixabay.mp3"),
+  Crickets:sitePath("/audio/crickets-pixabay.mp3"),
+  "Night forest":sitePath("/audio/night-forest-pixabay.mp3"),
 };
 const silentLevels = (): Levels => Object.fromEntries(ambientTrackNames.map(name => [name, 0])) as Levels;
 function soundForTime(hour: number): { name: AmbientTrackName; label: string; mix: Partial<Levels> } {

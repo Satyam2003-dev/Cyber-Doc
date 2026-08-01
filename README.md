@@ -4,80 +4,33 @@
 
 ### Write clearly. Publish beautifully. Keep your work yours.
 
-Cyber-Doc is a calm, local-first writing and publishing workspace inspired by modern editorial platforms and nature. Draft stories, organize publications, review revisions, explore analytics, and shape a focused writing atmosphere—all from one responsive interface.
+A calm, local-first writing and publishing workspace inspired by modern editorial platforms and nature.
 
 ![Cyber-Doc editorial workspace](public/og.png)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-111111?style=flat-square&logo=nextdotjs)
 ![React](https://img.shields.io/badge/React-19-20232a?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020?style=flat-square&logo=cloudflare&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-222222?style=flat-square&logo=github)
+
+[**Open the live website →**](https://satyam2003-dev.github.io/Cyber-Doc/)
 
 </div>
 
-## Why Cyber-Doc?
+## What it includes
 
-Most writing tools force you to choose between a beautiful editor, organized publishing controls, and ownership of your data. Cyber-Doc brings those ideas together in a focused workspace that starts empty and grows with your writing.
+- Complete local CRUD for stories, publications, media, revisions, and profile data
+- Editorial story editor with autosave, publishing controls, and keyboard shortcuts
+- Search, filters, analytics, revision restore, media management, and JSON backup
+- Editable author avatar, cover, name, location, and bio
+- Eleven nature-inspired light, dark, seasonal, and gradient themes
+- Nine local Pixabay nature recordings with time-aware ambient mixes
+- Responsive layouts for desktop, tablet, and mobile
+- Browser-local storage: writing is not sent to an application server
 
-- **Local-first:** stories and preferences remain in your browser.
-- **Creator-focused:** drafting, publishing, revisions, media, and analytics share one workflow.
-- **Distraction-aware:** responsive editorial typography and focused controls keep writing central.
-- **Nature-inspired:** adaptive themes and locally served ambient soundscapes create a calmer environment.
+## Run locally
 
-## Features
-
-### Writing and publishing
-
-- Create, edit, duplicate, publish, schedule, archive, restore, and delete stories
-- Distraction-free story editor with autosave feedback
-- Formatting shortcuts for bold, italic, underline, links, inline code, and saving
-- Story topics, tags, subtitles, cover images, SEO preview, and publishing controls
-- Publication management and author profile
-- Editable author name, bio, location, avatar, and profile cover image
-- Revision timeline with comparison and restore controls
-
-### Organization and discovery
-
-- Story dashboard with status filters and search
-- Global search across locally stored writing
-- Media library with upload and management controls
-- Publication and revision views
-- Responsive navigation for desktop, tablet, and mobile
-
-### Insights
-
-- Local publication analytics
-- Story, view, word-count, and publication summaries
-- Reading-time calculations
-- Profile and publishing progress
-
-### Themes and focus audio
-
-- Automatic time-aware appearance
-- Light, Dark, Spring, Summer, Autumn, Winter, Rainforest, Ocean, Desert, Blossom, and Aurora themes
-- True neutral-dark mode with high-contrast reading surfaces
-- Optional interface animations with an accessible On/Off switch
-- Nine locally served Pixabay nature recordings
-- Automatic dawn, morning, afternoon, evening, nightfall, and deep-night mixes
-- Manual volume mixer and writing presets
-- Pause state that stays paused until playback is requested or the page is refreshed
-
-### Data ownership
-
-- Browser-local story database
-- JSON backup export and restore
-- Local content erase controls
-- No account or remote database required
-- No writing is sent to a third-party service by the application
-
-## Quick start
-
-### Requirements
-
-- Node.js **22.13 or newer**
-- npm
-
-### Installation
+Requirements: Node.js 22.13 or newer and npm.
 
 ```bash
 git clone https://github.com/Satyam2003-dev/Cyber-Doc.git
@@ -86,17 +39,14 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Commands
+Open [http://localhost:3000/Cyber-Doc/](http://localhost:3000/Cyber-Doc/).
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the local development server |
-| `npm run build` | Create the production build |
-| `npm run start` | Run the production server locally |
-| `npm run lint` | Check the source with ESLint |
-| `npm test` | Build and run the route and feature tests |
+| `npm run dev` | Start the development server |
+| `npm run build` | Export the static website to `out/` |
+| `npm run lint` | Check source code with ESLint |
+| `npm test` | Build and test every route and core capability |
 
 ## Editor shortcuts
 
@@ -109,69 +59,45 @@ Open [http://localhost:3000](http://localhost:3000).
 | `` Ctrl/Cmd + ` `` | Inline code |
 | `Ctrl/Cmd + S` | Save story |
 
-## Application routes
+## Screens
 
-| Route | Screen |
-| --- | --- |
-| `/` | Reading home and published stories |
-| `/editor` | Story editor |
-| `/stories` | Story management |
-| `/search` | Global search |
-| `/media` | Media library |
-| `/analytics` | Publishing analytics |
-| `/publications` | Publication management |
-| `/revisions` | Version history |
-| `/profile` | Author profile |
-| `/focus` | Ambient sound mixer |
-| `/settings` | Themes, typography, animation, backup, and privacy |
+Home, editor, stories, search, media, analytics, publications, revision history, profile, focus sounds, and settings are exported as independent static routes under `/Cyber-Doc`.
 
 ## Project structure
 
 ```text
 app/
-  CyberDocApp.tsx       Shared application UI and screens
-  useBlogStore.ts       Local-first CRUD store
-  useAmbientSound.ts    Time-aware ambient audio engine
-  useThemePreferences.ts Theme and motion preferences
-  */page.tsx            Route entry points
+  CyberDocApp.tsx          Shared application UI and screens
+  useBlogStore.ts          Local-first CRUD store
+  useAmbientSound.ts       Time-aware local audio engine
+  useThemePreferences.ts   Theme and motion preferences
+  sitePath.ts              GitHub Pages-safe URL helper
+  */page.tsx               Static route entry points
 public/
-  audio/                Locally served nature recordings
-  og.png                Social and README preview image
+  audio/                   Locally served nature recordings
+  og.png                   Social and README preview
 tests/
-  rendered-html.test.mjs Route and capability tests
-worker/
-  index.ts              Cloudflare Worker entry point
+  static-export.test.mjs   Export and capability tests
+.github/workflows/
+  deploy-pages.yml          Automatic Pages deployment
 ```
 
-## How local data works
+## Publish with GitHub Pages
 
-Cyber-Doc stores stories, publications, revisions, media metadata, appearance preferences, and sound settings in browser storage. Export a JSON backup from **Settings → Data & privacy** before clearing browser data or moving to another device.
+Deployment is free and automatic from the `main` branch.
 
-Uploaded media can remain available for the current browser session. Keep original media files separately when they are important.
+1. Open **Settings → Pages** in this GitHub repository.
+2. Under **Build and deployment**, select **GitHub Actions** as the source.
+3. Push to `main`, or manually run **Deploy Cyber-Doc to GitHub Pages** in the Actions tab.
+4. Visit [https://satyam2003-dev.github.io/Cyber-Doc/](https://satyam2003-dev.github.io/Cyber-Doc/).
 
-## Deployment
+No separate hosting provider, server, or paid domain is required.
 
-Cyber-Doc builds for Cloudflare Workers and can be connected directly to this GitHub repository for automatic deployments from `main`.
+## Data and privacy
 
-1. Open **Cloudflare → Workers & Pages**.
-2. Choose **Create application → Import a repository**.
-3. Select `Satyam2003-dev/Cyber-Doc`.
-4. Use `npm run build` as the build command.
-5. Deploy and use the generated free `workers.dev` URL.
+Cyber-Doc stores content in browser storage. Export a JSON backup from **Settings → Data & privacy** before clearing browser data or moving devices. Uploaded image data is optimized for local storage, but important original files should be kept separately.
 
-The free address follows this format:
-
-```text
-https://cyber-doc.<your-cloudflare-subdomain>.workers.dev
-```
-
-## Audio credits
-
-Ambient recordings are stored locally in `public/audio` and used under the [Pixabay Content License](https://pixabay.com/service/license-summary/). Individual track titles, creators, and source links are documented in [public/audio/README.txt](public/audio/README.txt).
-
-## Privacy note
-
-Cyber-Doc is currently designed as a single-device, browser-local application. Clearing site data can remove locally stored writing unless you export a backup first.
+Ambient recordings are saved in `public/audio` and used under the [Pixabay Content License](https://pixabay.com/service/license-summary/). Track credits and source links are documented in [public/audio/README.txt](public/audio/README.txt).
 
 ---
 
@@ -179,6 +105,6 @@ Cyber-Doc is currently designed as a single-device, browser-local application. C
 
 **Grow your ideas into something worth publishing.**
 
-[Repository](https://github.com/Satyam2003-dev/Cyber-Doc) · [Report an issue](https://github.com/Satyam2003-dev/Cyber-Doc/issues)
+[Live website](https://satyam2003-dev.github.io/Cyber-Doc/) · [Repository](https://github.com/Satyam2003-dev/Cyber-Doc) · [Report an issue](https://github.com/Satyam2003-dev/Cyber-Doc/issues)
 
 </div>

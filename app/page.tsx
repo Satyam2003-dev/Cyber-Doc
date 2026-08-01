@@ -1,2 +1,2 @@
 import CyberDocApp from "./CyberDocApp";
-export default function Page(){return <CyberDocApp screen="dashboard"/>}
+export default function Page(){return <CyberDocApp screen="home"/>}
